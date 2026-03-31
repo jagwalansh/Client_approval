@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Approval Dashboard</title>
+
+    <!-- React -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Router -->
+    <script src="https://unpkg.com/react-router-dom@6/dist/umd/react-router-dom.production.min.js"></script>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body { font-family: sans-serif; }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+<div id="root"></div>
+
+<script type="text/babel">
+
+const { useState, useContext, createContext } = React;
+const { BrowserRouter, Routes, Route, useNavigate } = ReactRouterDOM;
+
+/* ================= CONTEXT ================= */
+const ApiContext = createContext();
+
+const demoUsers = {
+    'admin@portal.com': { name: 'Admin', role: 'admin' }
+};
+
+const demoDocuments = [
+    { id: 1, title: "Doc 1", status: "Pending" },
+    { id: 2, title: "Doc 2", status: "Approved" }
+];
+
+const ApiProvider = ({ children }) => {
+    const [user, setUser] = useState(null);
+
+    const login = (email, password) => {
+        if (email === "admin@portal.com" && password === "admin123") {
+            setUser(demoUsers[email]);
+            return true;
+        }
+        return false;
+    };
+
+    const logout = () => setUser(null);
+
+    return (
+        <ApiContext.Provider value={{ user, login, logout, demoDocuments }}>
+            {children}
+        </ApiContext.Provider>
+    );
+};
+
+/* ================= COMPONENTS ================= */
+
+const Login = () => {
+    const { login } = useContext(ApiContext);
+    const navigate = useNavigate();
+
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+
+    const handleLogin = () => {
+        const success = login(email, password);
+        if (success) navigate("/dashboard");
+        else alert("Invalid credentials");
+    };
+
+    return (
+        <div className="flex justify-center items-center h-screen">
+            <div className="bg-white p-6 rounded shadow w-80">
+                <h2 className="text-xl mb-4">Login</h2>
+
+                <input
+                    className="border p-2 w-full mb-2"
+                    placeholder="Email"
+                    onChange={e => setEmail(e.target.value)}
+                />
+
+                <input
+                    type="password"
+                    className="border p-2 w-full mb-4"
+                    placeholder="Password"
+                    onChange={e => setPassword(e.target.value)}
+                />
+
+                <button
+                    className="bg-blue-500 text-white px-4 py-2 w-full"
+                    onClick={handleLogin}
+                >
+                    Login
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const Dashboard = () => {
+    const { user, logout, demoDocuments } = useContext(ApiContext);
+    const navigate = useNavigate();
+
+    if (!user) {
+        navigate("/");
+        return null;
+    }
+
+    return (
+        <div className="p-6">
+            <div className="flex justify-between mb-4">
+                <h1 className="text-2xl">Dashboard</h1>
+                <button onClick={logout} className="bg-red-500 text-white px-3 py-1">
+                    Logout
+                </button>
+            </div>
+
+            <h2 className="mb-2">Documents</h2>
+
+            {demoDocuments.map(doc => (
+                <div key={doc.id} className="bg-white p-4 mb-2 shadow rounded">
+                    <p><b>{doc.title}</b></p>
+                    <p>Status: {doc.status}</p>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+/* ================= APP ================= */
+
+const App = () => {
+    return (
+        <ApiProvider>
+            <BrowserRouter>
+                <Routes>
+                    <Route path="/" element={<Login />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                </Routes>
+            </BrowserRouter>
+        </ApiProvider>
+    );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+</script>
+
+</body>
+</html>
